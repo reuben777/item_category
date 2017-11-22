@@ -1,1 +1,1 @@
-# item_category
+Item Catalog Project

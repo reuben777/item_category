@@ -1,0 +1,23 @@
+{% extends "main.html" %}
+{% block content %}
+  <form method="post" id="needs-validation" novalidate>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" name="name" id="name" placeholder="Name" required>
+        <div class="invalid-feedback">
+          Please provide a valid name.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="name">Icon</label>
+        <input type="text" class="form-control" name="icon" id="icon" placeholder="Icon" required>
+        <div class="invalid-feedback">
+          Please provide a valid icon.
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary clickable" type="submit">Create Category</button>
+  </form>
+{% endblock %}

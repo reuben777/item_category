@@ -1,0 +1,9 @@
+.clickable {
+    cursor: pointer;
+}
+
+.clean_href, .clean_href:hover, .clean_href:visited {
+  color: black;
+  cursor: pointer;
+  text-decoration: none;
+}

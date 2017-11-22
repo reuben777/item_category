@@ -1,0 +1,29 @@
+{% extends "main.html" %}
+{% block content %}
+  <form method="post" id="needs-validation" novalidate>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" name="name" id="name" placeholder="Name" value="{{category.name}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid name.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="name">Icon</label>
+        <input type="text" class="form-control" name="icon" id="icon" placeholder="Icon" value="{{category.icon}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid icon.
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary clickable" type="submit">Save</button>
+    <a class="btn btn-secondary" href='{{url_for('home')}}'>
+      <i class="fa fa-times" aria-hidden="true"></i> Cancel
+    </a>
+    <a class="btn btn-secondary" href='{{url_for('deleteCategory', category_id=category.id)}}'>
+      <i class="fa fa-trash" aria-hidden="true"></i> Delete
+    </a>
+  </form>
+{% endblock %}

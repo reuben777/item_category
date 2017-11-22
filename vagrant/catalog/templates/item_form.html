@@ -1,0 +1,27 @@
+{% extends "main.html" %}
+{% block content %}
+  <form method="post" id="needs-validation" novalidate>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="name">Item Name</label>
+        <input type="text" class="form-control" name="name" id="name" placeholder="Item Name" required>
+        <div class="invalid-feedback">
+          Please provide a valid item name.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="sub_category_id">Category</label>
+        <select name="sub_category_id" id="sub_category_id" class="form-control">
+          {% for sub_category in sub_categories %}
+            <option value="{{sub_category.id}}">{{sub_category.name}} - {{sub_category.category.name}}</option>
+          {% endfor %}
+        </select>
+        <div class="invalid-feedback">
+          Please provide a valid category.
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary clickable" type="submit">Create Item</button>
+  </form>
+{% endblock %}

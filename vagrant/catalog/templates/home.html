@@ -1,0 +1,44 @@
+{% extends "main.html" %}
+{% block content %}
+  {% if categories %}
+    <div class="row row-eq-height">
+      {% for category in categories %}
+        <div class="col-4">
+          <p class="clickable">
+            <i class="fa {{category.icon}}"></i>
+            <a data-toggle="collapse" data-target="#{{category.id}}-category_id" aria-expanded="{% if category.sub_categories | length > 0 %}true{% else %}false{% endif %}" aria-controls="{{category.id}}-category_id">
+              {{category.name}} - <a href="{{url_for('editCategory', category_id=category.id)}}">Edit</a> ({{category.sub_categories | length}})
+            </a>
+          </p>
+          <div class="collapse px-3 {% if category.sub_categories | length > 0 %}show{% endif %}" id="{{category.id}}-category_id">
+            {% if category.sub_categories %}
+            {% for sub_category in category.sub_categories %}
+              <p class="clickable">
+                <i class="fa {{sub_category.icon}}"></i>
+                <a data-toggle="collapse" data-target="#{{sub_category.id}}-sub_category_id" aria-expanded="false" aria-controls="{{sub_category.id}}-sub_category_id">
+                  {{sub_category.name}} - <a href="/subcategory/{{sub_category.id}}/edit">Edit</a> ({{sub_category.item_info | length}})
+                </a>
+              </p>
+              <div class="collapse px-3" id="{{sub_category.id}}-sub_category_id">
+                {% if sub_category.item_info %}
+                  {% for item in sub_category.item_info %}
+                    <p>
+                      <a href="/item/{{item.id}}/edit">{{item.name}}</a>
+                    </p>
+                  {% endfor %}
+                {% else %}
+                  <span class="d-block">What did you expect?</span>
+                  <img class="rounded w-50 img-fluid" alt="Really High Kid" src="{{ url_for('static', filename='high_kid.jpg')}}">
+                {% endif %}
+              </div>
+            {% endfor %}
+            {% else %}
+              <span class="d-block">Ummm...Didn't find anything</span>
+              <img class="rounded img-fluid" alt="Awkward Seal..." src="{{ url_for('static', filename='awkward_seal.jpg')}}">
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}

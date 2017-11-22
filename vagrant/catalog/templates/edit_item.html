@@ -1,0 +1,33 @@
+{% extends "main.html" %}
+{% block content %}
+  <form method="post" id="needs-validation" novalidate>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="name">Item Name</label>
+        <input type="text" class="form-control" name="name" id="name" placeholder="Item Name" value="{{item.name}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid item_name.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="sub_category_id">Category</label>
+        <select name="sub_category_id" id"sub_category_id" class="form-control">
+          {% for sub_category in sub_categories %}
+            <option value="{{sub_category.id}}" {% if sub_category.id == item.sub_category_id %} selected{% endif %}>{{sub_category.name}} - {{sub_category.category.name}}</option>
+          {% endfor %}
+        </select>
+        <div class="invalid-feedback">
+          Please provide a valid category.
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary clickable" type="submit">Save</button>
+    <a class="btn btn-secondary" href='{{url_for('home')}}'>
+      <i class="fa fa-times" aria-hidden="true"></i> Cancel
+    </a>
+    <a class="btn btn-secondary" href='{{url_for('deleteItem', item_id=item.id)}}'>
+      <i class="fa fa-trash" aria-hidden="true"></i> Delete
+    </a>
+  </form>
+{% endblock %}

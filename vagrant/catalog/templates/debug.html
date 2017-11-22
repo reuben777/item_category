@@ -1,0 +1,11 @@
+{% extends "main.html" %}
+{% block content %}
+{% for info in data %}
+  <h3>{{info.name}}</h3>
+    {% for dic in info.data %}
+      <code class="d-block">
+        {{dic}}
+      </code>
+    {% endfor %}
+{% endfor %}
+{% endblock %}

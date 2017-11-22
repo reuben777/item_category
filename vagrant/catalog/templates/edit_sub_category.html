@@ -1,0 +1,40 @@
+{% extends "main.html" %}
+{% block content %}
+  <form method="post" id="needs-validation" novalidate>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" name="name" id="name" placeholder="Name" value="{{sub_category.name}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid name.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="name">Icon</label>
+        <input type="text" class="form-control" name="icon" id="icon" placeholder="Icon" value="{{sub_category.icon}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid icon.
+        </div>
+      </div>
+      <div class="col-md-12 mb-3">
+        <label for="validationDefault02">Category</label>
+        <select name="category_id" class="form-control" required>
+          {% for category in categories %}
+            <option value="{{category.id}}" {% if category.id == sub_category.category_id%}selected{% endif %}>{{category.name}}</option>
+          {% endfor %}
+        </select>
+        <div class="invalid-feedback">
+          Please provide a valid category.
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary clickable" type="submit">Save</button>
+    <a class="btn btn-secondary" href='{{url_for('home')}}'>
+      <i class="fa fa-times" aria-hidden="true"></i> Cancel
+    </a>
+    <a class="btn btn-secondary" href='{{url_for('deleteSubCategory', sub_category_id=sub_category.id)}}'>
+      <i class="fa fa-trash" aria-hidden="true"></i> Delete
+    </a>
+  </form>
+{% endblock %}

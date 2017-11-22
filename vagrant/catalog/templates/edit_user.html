@@ -1,0 +1,51 @@
+{% extends "main.html" %}
+{% block content %}
+  <form method="post" id="needs-validation" novalidate>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" name="name" id="name" placeholder="Name" value="{{user.name}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid name.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="email">Email</label>
+        <input type="text" class="form-control" name="email" id="email" placeholder="Email" value="{{user.email}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid email.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="username">Username</label>
+        <input type="text" class="form-control" name="username" id="username" placeholder="Username" value="{{user.username}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid username.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="user_group_id">User Group</label>
+        <select name="user_group_id" id="user_group_id" class="form-control">
+          {% for user_group in user_groups %}
+            <option value="{{user_group.id}}" {% if user_group.id == user.user_group_id %}selected{% endif %}>{{user_group.name}}</option>
+          {% endfor %}
+        </select>
+        <div class="invalid-feedback">
+          Please provide a valid user group.
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="picture">Profile Picture</label>
+        <input type="text" class="form-control" name="picture" id="picture" placeholder=".../image.jpg" value="{{user.picture}}" required>
+        <div class="invalid-feedback">
+          Please provide a valid profile picture.
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary clickable" type="submit">Save</button>
+    <a class="btn btn-secondary" href='{{url_for('manageUsers')}}'>
+      <i class="fa fa-times" aria-hidden="true"></i> Cancel
+    </a>
+  </form>
+{% endblock %}
