@@ -38,7 +38,11 @@ def utilityProcessor():
         string.ascii_uppercase + string.digits
         ) for x in range(32))
     login_session['state'] = state
-    return dict(STATE=state)
+    user = dict(
+        username=login_session.get('username'),
+        email=login_session.get('email'),
+        picture=login_session.get('picture'))
+    return dict(STATE=state, USER=user)
 
 
 @app.route('/')
@@ -431,7 +435,7 @@ def gconntect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' class="rounded img-fluid" >'
+    output += '" class="rounded img-fluid" >'
     flash("you are now logged in as {}".format(login_session['username']))
     return output
 

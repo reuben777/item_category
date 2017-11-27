@@ -1,9 +1,9 @@
 <!-- Modal -->
 <div class="modal fade" id="login_modal" tabindex="-1" role="dialog" aria-labelledby="login_modal_label" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="login_modal_label">Modal title</h5>
+        <h5 class="modal-title" id="login_modal_label">Login</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -22,10 +22,29 @@
                 data-approvalprompt="force">
               </span>
             </div>
-            <div id="result"></div>
           </div>
           <div class="col-md-6">
-            {# login form #}
+            <form method="post" action="/users/login" id="login-form" novalidate>
+              <div class="row">
+                <div class="col-md-12 mb-2">
+                  <label for="email"> Email:</label>
+                  <input type="text" id='email' class="form-control" name="email" placeholder="Email" required>
+                  <div id='email-validation' class="invalid-feedback">
+                    Please provide a valid username or email.
+                  </div>
+                </div>
+                <div class="col-md-12 mb-2">
+                  <label for="passwd">Password:</label>
+                  <input type="password" class="form-control" name="passwd" placeholder="*****" required>
+                  <div id='passwd-validation' class="invalid-feedback">
+                    Password is too short.
+                  </div>
+                </div>
+                <div class="col-md-12">
+                  <button class="btn btn-primary" type="submit">Log In</button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -36,3 +55,75 @@
     </div>
   </div>
 </div>
+
+<script>
+function setElementValid(elem) {
+  // reset classes for validation
+  elem.removeClass('is-invalid');
+  elem.addClass('is-valid');
+}
+
+function setElementInvalid(elem) {
+  // reset classes for validation
+  elem.addClass('is-invalid');
+  elem.removeClass('is-valid');
+}
+
+function validateFormPasswd () {
+  var passwdElem = $("[name='passwd']");
+  var passwdLength = passwdElem.val().length
+  var passwdValidationElem = $('#passwd-validation');
+  var passwdValid = false;
+
+  if (passwdLength == 0) {
+    passwdValidationElem.text('Please provide a password.');
+    setElementInvalid(passwdElem);
+  } else if (passwdLength < 6) {
+    passwdValidationElem.text('Password is too short.')
+    setElementInvalid(passwdElem);
+  } else {
+    passwdValid = true;
+    setElementValid(passwdElem);
+  }
+  return passwdValid;
+}
+
+function validateFormEmail () {
+  var emailElem = $("#email");
+  var emailLength = emailElem.val().length;
+  var emailValidationElem = $('#email-validation');
+  var emailValid = false;
+  var validEmailFormat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(emailElem.val());
+  if (emailLength == 0) {
+    emailValidationElem.text('Please provide an email.');
+    setElementInvalid(emailElem);
+  } else if (!validEmailFormat) {
+    emailValidationElem.text('Email is not valid')
+    setElementInvalid(emailElem);
+  } else {
+    passwdValid = true;
+    setElementValid(emailElem);
+  }
+
+  return emailValid;
+}
+
+$('#login-form').submit(function(event) {
+  // set keyup password addEventListener
+  $("[name='passwd']").on('change paste keyup', function() {
+    validateFormPasswd();
+  });
+  $("#email").on('change paste keyup', function() {
+    validateFormEmail();
+  });
+
+  var validPasswd = validateFormPasswd();
+  var validEmail = validateFormEmail();
+
+  if (validPasswd === false || validEmail === false) {
+    console.log(validPasswd, validEmail)
+    event.preventDefault();
+    event.stopPropagation();
+  }
+});
+</script>
