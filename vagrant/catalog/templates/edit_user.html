@@ -11,7 +11,7 @@
       </div>
       <div class="col-md-6 mb-3">
         <label for="email">Email</label>
-        <input type="text" class="form-control" name="email" id="email" placeholder="Email" value="{{user.email}}" required>
+        <input type="email" class="form-control" name="email" id="email" placeholder="Email" value="{{user.email}}" required>
         <div class="invalid-feedback">
           Please provide a valid email.
         </div>
@@ -21,17 +21,6 @@
         <input type="text" class="form-control" name="username" id="username" placeholder="Username" value="{{user.username}}" required>
         <div class="invalid-feedback">
           Please provide a valid username.
-        </div>
-      </div>
-      <div class="col-md-6 mb-3">
-        <label for="user_group_id">User Group</label>
-        <select name="user_group_id" id="user_group_id" class="form-control">
-          {% for user_group in user_groups %}
-            <option value="{{user_group.id}}" {% if user_group.id == user.user_group_id %}selected{% endif %}>{{user_group.name}}</option>
-          {% endfor %}
-        </select>
-        <div class="invalid-feedback">
-          Please provide a valid user group.
         </div>
       </div>
       <div class="col-md-6 mb-3">

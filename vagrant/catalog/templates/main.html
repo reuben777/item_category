@@ -77,25 +77,123 @@
 		  }
 		</script>
 
-
 		<script>
-		// Example starter JavaScript for disabling form submissions if there are invalid fields
-		(function() {
-		  'use strict';
+		function setElementValid(elem) {
+		  // reset classes for validation
+		  elem.removeClass('is-invalid');
+		  elem.addClass('is-valid');
+		}
 
-		  window.addEventListener('load', function() {
-		    var form = document.getElementById('needs-validation');
-				if (form) {
-			    form.addEventListener('submit', function(event) {
-			      if (form.checkValidity() === false) {
-			        event.preventDefault();
-			        event.stopPropagation();
-			      }
-			      form.classList.add('was-validated');
-			    }, false);
+		function setElementInvalid(elem) {
+		  // reset classes for validation
+		  elem.addClass('is-invalid');
+		  elem.removeClass('is-valid');
+		}
+
+		function validateRequired(elemRequired) {
+			var length = elemRequired.val().length
+			var validationTextElem = elemRequired.next();
+			var valid = false;
+			if (length == 0) {
+		    setElementInvalid(elemRequired);
+		  } else {
+		    valid = true;
+		    setElementValid(elemRequired);
+		  }
+		  return valid;
+		}
+
+		function validateMinLength (minLenElem) {
+		  var length = minLenElem.val().length
+		  var validationTextElem = minLenElem.next();
+		  var valid = false;
+
+		  if (length == 0) {
+		    validationTextElem.text('Required');
+		    setElementInvalid(minLenElem);
+		  } else if (length < minLenElem.attr('min')) {
+		    validationTextElem.text('Too short. (' + length + '/' + minLenElem.attr('min') + ')')
+		    setElementInvalid(minLenElem);
+		  } else {
+		    valid = true;
+		    setElementValid(minLenElem);
+		  }
+		  return valid;
+		}
+
+		function validateEmail (emailElem) {
+		  var emailLength = emailElem.val().length;
+		  var emailValidationElem = emailElem.next();
+		  var emailValid = false;
+		  var validEmailFormat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(emailElem.val());
+		  if (emailLength == 0) {
+		    emailValidationElem.text('Please provide an email.');
+		    setElementInvalid(emailElem);
+		  } else if (!validEmailFormat) {
+		    emailValidationElem.text('Email is not valid.')
+		    setElementInvalid(emailElem);
+		  } else {
+		    emailValid = true;
+		    setElementValid(emailElem);
+		  }
+
+		  return emailValid;
+		}
+
+		function validateElement(element) {
+		  if (element.required) {
+		    var Jelem = null;
+		    if (element.id) {
+					var elementValid = false;
+		      Jelem = $('#' + element.id);
+					if (element.min) {
+			      // min validation
+			      elementValid = validateMinLength(Jelem);
+						Jelem.on('change paste keyup', function() {
+					  	validateMinLength(Jelem);
+					  });
+			    } else if (element.type == 'email') {
+			      // email validation
+			      elementValid = validateEmail(Jelem);
+						Jelem.on('change paste keyup', function() {
+					  	validateEmail(Jelem);
+					  });
+			    } else {
+						elementValid = validateRequired(Jelem);
+						Jelem.on('change paste keyup', function() {
+							validateRequired(Jelem);
+						});
+					}
+					return elementValid;
+		    } else {
+					console.log('@Noob Developer, give the input that needs validation an id bro');
+					return true;
 				}
-		  }, false);
-		})();
+		  } else {
+		    return true;
+		  }
+		}
+
+		function validateAllInputs(event) {
+		  var valid_form = true;
+		  for (let i = 0; i < event.target.length; i++) {
+		    var elem = event.target[i];
+		    if (elem.nodeName === 'INPUT') {
+		      var elem_valid = validateElement(elem);
+		      if (!elem_valid) {
+		        valid_form = false;
+		      }
+		    }
+		  }
+			return valid_form
+		}
+
+		$('#needs-validation').submit(function(event) {
+		  if (!validateAllInputs(event)) {
+		    event.preventDefault();
+		    event.stopPropagation();
+		  }
+		});
 		</script>
 
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>

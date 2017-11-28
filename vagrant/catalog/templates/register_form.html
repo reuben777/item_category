@@ -1,0 +1,56 @@
+{% extends "main.html" %}
+{% block content %}
+<form method="post" id="register-validation" novalidate>
+  <div class="row">
+    <div class="col-md-6 mb-2">
+      <label for="email"> Name:</label>
+      <input type="text" class="form-control" id="reg_name" name="name" placeholder="Name" required>
+      <div class="invalid-feedback">
+        Please provide a name.
+      </div>
+    </div>
+    <div class="col-md-6 mb-2">
+      <label for="email"> Username:</label>
+      <input type="text" class="form-control" id="reg_username" name="username" placeholder="Username" required>
+      <div class="invalid-feedback">
+        Please provide a username.
+      </div>
+    </div>
+    <div class="col-md-6 mb-2">
+      <label for="email"> Picture Url:</label>
+      <input type="text" class="form-control" id="picture" name="picture" placeholder="Picture Url" required>
+      <div class="invalid-feedback">
+        Please provide a picture url.
+      </div>
+    </div>
+    <div class="col-md-6 mb-2">
+      <label for="reg_email"> Email:</label>
+      <input type="email" class="form-control" id="reg_email" name="email" placeholder="Email" required>
+      <div class="invalid-feedback"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6 mb-2">
+      <label for="reg_passwd"> Password:</label>
+      <input type="password" class="form-control" id="reg_passwd" name="passwd" placeholder="*****" min="6" required>
+      <div class="invalid-feedback"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <button class="btn btn-primary" type="submit">Register</button>
+    </div>
+  </div>
+</form>
+<script>
+
+
+$('#register-validation').submit(function(event) {
+  var valid = validateAllInputs(event);
+  if (!valid) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+});
+</script>
+{% endblock %}

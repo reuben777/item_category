@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from application_setup import Base, User, UserGroup, Category, Item
-from application_setup import AuthInfo, SubCategory
+from application_setup import Base, User, Category, Item, SubCategory
 
 engine = create_engine('sqlite:///catalog.db')
 # Bind the engine to the metadata of the Base class so that the
@@ -13,17 +12,12 @@ DBSession = sessionmaker(bind=engine)
 
 session = DBSession()
 
-user_groups = [
-    "Group 1",
-    "Group 2"
-]
-
 users = [
-    {'username': 'Master', 'password': '123456', 'user_group_id': 1},
-    {'username': 'John', 'password': 'test', 'user_group_id': 2},
-    {'username': 'Sarah', 'password': 'test', 'user_group_id': 2},
-    {'username': 'Dolly', 'password': 'test', 'user_group_id': 3},
-    {'username': 'Claire', 'password': 'test', 'user_group_id': 3},
+    {'username': 'Master', 'password': '123456'},
+    {'username': 'John', 'password': 'test123'},
+    {'username': 'Sarah', 'password': 'test123'},
+    {'username': 'Dolly', 'password': 'test123'},
+    {'username': 'Claire', 'password': 'test123'},
 ]
 
 categories = [
@@ -45,52 +39,22 @@ sub_categories = [
 ]
 
 items = [
-    {'name': 'Bar 1', 'sub_category_id': 1},
-    {'name': 'Bar 2', 'sub_category_id': 1},
-    {'name': 'Club 1', 'sub_category_id': 2},
-    {'name': 'Club 2', 'sub_category_id': 2},
-    {'name': 'Hotel 1', 'sub_category_id': 4},
-    {'name': 'Hotel 2', 'sub_category_id': 4},
-    {'name': 'Museum 1', 'sub_category_id': 5},
-    {'name': 'Museum 2', 'sub_category_id': 5},
-    {'name': 'Restuarant 1', 'sub_category_id': 6},
-    {'name': 'Restuarant 2', 'sub_category_id': 6},
-    {'name': 'Park 1', 'sub_category_id': 7},
-    {'name': 'Recreation Center 1', 'sub_category_id': 8},
+    {'name': 'Bar 1', 'description': 'description', 'sub_category_id': 1},
+    {'name': 'Bar 2', 'description': 'description', 'sub_category_id': 1},
+    {'name': 'Club 1', 'description': 'description', 'sub_category_id': 2},
+    {'name': 'Club 2', 'description': 'description', 'sub_category_id': 2},
+    {'name': 'Hotel 1', 'description': 'description', 'sub_category_id': 4},
+    {'name': 'Hotel 2', 'description': 'description', 'sub_category_id': 4},
+    {'name': 'Museum 1', 'description': 'description', 'sub_category_id': 5},
+    {'name': 'Museum 2', 'description': 'description', 'sub_category_id': 5},
+    {'name': 'Restuarant 1', 'description': 'description', 'sub_category_id': 6},
+    {'name': 'Restuarant 2', 'description': 'description', 'sub_category_id': 6},
+    {'name': 'Park 1', 'description': 'description', 'sub_category_id': 7},
+    {'name': 'Recreation Center 1', 'description': 'description', 'sub_category_id': 8},
 ]
-
-auth_info = [
-    {'item_id': 1, 'user_group_id': 1},
-    {'item_id': 2, 'user_group_id': 1},
-    {'item_id': 3, 'user_group_id': 2},
-    {'item_id': 4, 'user_group_id': 2},
-    {'item_id': 5, 'user_group_id': 2},
-    {'item_id': 6, 'user_group_id': 1},
-    {'item_id': 7, 'user_group_id': 1},
-    {'item_id': 8, 'user_group_id': 1},
-    {'item_id': 9, 'user_group_id': 3},
-    {'item_id': 10, 'user_group_id': 3},
-    {'item_id': 11, 'user_group_id': 3},
-    {'item_id': 12, 'user_group_id': 3},
-    {'item_id': 1, 'user_group_id': 2},
-    {'item_id': 1, 'user_group_id': 3},
-]
-
-
-def setupGroups():
-    # Setup Master UserGroup
-    master = UserGroup(name='Master')
-    session.add(master)
-    print "Created Group - Master"
-    for group_name in user_groups:
-        new_group = UserGroup(name=group_name)
-        print "Created Group - %s" % group_name
-        session.add(new_group)
-    session.commit()
 
 
 def setupUsers():
-    setupGroups()
     for user in users:
         email = '%s@gmail.com' % user['username'].lower()
         new_user = User(
@@ -98,7 +62,7 @@ def setupUsers():
             email=email,
             username=user['username'].lower(),
             picture='/static/_blank_user.png',
-            user_group_id=user['user_group_id'])
+            passwd=user['password'])
         print "Created User - %s" % new_user.serialize
         session.add(new_user)
     session.commit()
@@ -128,19 +92,10 @@ def setupItems():
     for item in items:
         new_item = Item(
             name=item['name'],
+            description=item['description'],
             sub_category_id=item['sub_category_id'])
         print "Created Item - %s" % new_item.serialize
         session.add(new_item)
-    session.commit()
-
-
-def setupAuth():
-    for auth in auth_info:
-        new_auth = AuthInfo(
-            item_id=auth['item_id'],
-            user_group_id=auth['user_group_id'])
-        print "Created Auth Link - %s" % new_auth.serialize
-        session.add(new_auth)
     session.commit()
 
 
@@ -159,4 +114,3 @@ clean_db()
 setupUsers()
 setupCategories()
 setupItems()
-setupAuth()
