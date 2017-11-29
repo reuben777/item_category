@@ -1,0 +1,23 @@
+{% extends "main.html" %}
+{% block content %}
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label><b>Name:</b></label>
+      <p>
+        {{sub_category.name}}
+      </p>
+    </div>
+    <div class="col-md-6 mb-3">
+      <label><b>Icon:</b></label>
+      <p>
+        {{sub_category.icon}}
+      </p>
+    </div>
+    <div class="col-md-12 mb-3">
+      <label><b>Category</b></label>
+      {% for category in categories %}
+        <p value="{{category.id}}" {% if category.id == sub_category.category_id%}selected{% endif %}>{{category.name}}</p>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

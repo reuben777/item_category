@@ -21,41 +21,69 @@ users = [
 ]
 
 categories = [
-    {'name': 'Entertainment', 'icon': 'fa-music'},
-    {'name': 'Places', 'icon': 'fa-building-o'},
-    {'name': 'Parks and Playgrounds', 'icon': 'fa-tree'},
-    {'name': 'Other', 'icon': 'fa-list'}
+    {'name': 'Entertainment', 'icon': 'fa-music',
+        'created_by_id': 1},
+    {'name': 'Places', 'icon': 'fa-building-o',
+        'created_by_id': 1},
+    {'name': 'Parks and Playgrounds', 'icon': 'fa-tree',
+        'created_by_id': 1},
+    {'name': 'Other', 'icon': 'fa-list',
+        'created_by_id': 5}
 ]
 
 sub_categories = [
-    {'name': 'Bars', 'icon': 'fa-glass', 'category_id': 1},
-    {'name': 'Clubs', 'icon': 'fa-microphone', 'category_id': 1},
-    {'name': 'Lounges', 'icon': 'fa-building', 'category_id': 1},
-    {'name': 'Hotels', 'icon': 'fa-home', 'category_id': 2},
-    {'name': 'Museums', 'icon': 'fa-picture-o', 'category_id': 2},
-    {'name': 'Restuarants', 'icon': 'fa-cutlery', 'category_id': 2},
-    {'name': 'Parks', 'icon': 'fa-paw', 'category_id': 3},
-    {'name': 'Recreation Centers', 'icon': 'fa-star-o', 'category_id': 3},
+    {'name': 'Bars', 'icon': 'fa-glass', 'category_id': 1,
+        'created_by_id': 2},
+    {'name': 'Clubs', 'icon': 'fa-microphone', 'category_id': 1,
+        'created_by_id': 3},
+    {'name': 'Lounges', 'icon': 'fa-building', 'category_id': 1,
+        'created_by_id': 4},
+    {'name': 'Hotels', 'icon': 'fa-home', 'category_id': 2,
+        'created_by_id': 2},
+    {'name': 'Museums', 'icon': 'fa-picture-o', 'category_id': 2,
+        'created_by_id': 5},
+    {'name': 'Restuarants', 'icon': 'fa-cutlery', 'category_id': 2,
+        'created_by_id': 2},
+    {'name': 'Parks', 'icon': 'fa-paw', 'category_id': 3,
+        'created_by_id': 5},
+    {'name': 'Recreation Centers', 'icon': 'fa-star-o', 'category_id': 3,
+        'created_by_id': 1},
 ]
 
 items = [
-    {'name': 'Bar 1', 'description': 'description', 'sub_category_id': 1},
-    {'name': 'Bar 2', 'description': 'description', 'sub_category_id': 1},
-    {'name': 'Club 1', 'description': 'description', 'sub_category_id': 2},
-    {'name': 'Club 2', 'description': 'description', 'sub_category_id': 2},
-    {'name': 'Hotel 1', 'description': 'description', 'sub_category_id': 4},
-    {'name': 'Hotel 2', 'description': 'description', 'sub_category_id': 4},
-    {'name': 'Museum 1', 'description': 'description', 'sub_category_id': 5},
-    {'name': 'Museum 2', 'description': 'description', 'sub_category_id': 5},
+    {'name': 'Bar 1', 'description': 'description', 'sub_category_id': 1,
+        'created_by_id': 2},
+    {'name': 'Bar 2', 'description': 'description', 'sub_category_id': 1,
+        'created_by_id': 3},
+    {'name': 'Club 1', 'description': 'description', 'sub_category_id': 2,
+        'created_by_id': 2},
+    {'name': 'Club 2', 'description': 'description', 'sub_category_id': 2,
+        'created_by_id': 4},
+    {'name': 'Hotel 1', 'description': 'description', 'sub_category_id': 4,
+        'created_by_id': 2},
+    {'name': 'Hotel 2', 'description': 'description', 'sub_category_id': 4,
+        'created_by_id': 1},
+    {'name': 'Museum 1', 'description': 'description', 'sub_category_id': 5,
+        'created_by_id': 1},
+    {'name': 'Museum 2', 'description': 'description', 'sub_category_id': 5,
+        'created_by_id': 2},
     {'name': 'Restuarant 1',
-        'description': 'description', 'sub_category_id': 6},
+        'description': 'description', 'sub_category_id': 6,
+        'created_by_id': 2},
     {'name': 'Restuarant 2',
-        'description': 'description', 'sub_category_id': 6},
+        'description': 'description', 'sub_category_id': 6,
+        'created_by_id': 5},
     {'name': 'Park 1',
-        'description': 'description', 'sub_category_id': 7},
+        'description': 'description', 'sub_category_id': 7,
+        'created_by_id': 2},
     {'name': 'Recreation Center 1',
-        'description': 'description', 'sub_category_id': 8},
+        'description': 'description', 'sub_category_id': 8,
+        'created_by_id': 5},
 ]
+
+
+def getRandomUserId():
+    return randint(1, len(users))
 
 
 def setupUsers():
@@ -74,7 +102,10 @@ def setupUsers():
 
 def setupCategories():
     for category in categories:
-        new_category = Category(name=category['name'], icon=category['icon'])
+        new_category = Category(
+            name=category['name'],
+            icon=category['icon'],
+            created_by_id=category['created_by_id'])
         print "Created Category - %s" % new_category.serialize
         session.add(new_category)
     session.commit()
@@ -86,7 +117,8 @@ def setupSubCategories():
         new_sub_category = SubCategory(
             name=sub_category['name'],
             icon=sub_category['icon'],
-            category_id=sub_category['category_id'])
+            category_id=sub_category['category_id'],
+            created_by_id=sub_category['created_by_id'])
         print "Created Sub Category - %s" % new_sub_category.serialize
         session.add(new_sub_category)
     session.commit()
@@ -97,7 +129,8 @@ def setupItems():
         new_item = Item(
             name=item['name'],
             description=item['description'],
-            sub_category_id=item['sub_category_id'])
+            sub_category_id=item['sub_category_id'],
+            created_by_id=item['created_by_id'])
         print "Created Item - %s" % new_item.serialize
         session.add(new_item)
     session.commit()

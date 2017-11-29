@@ -76,6 +76,8 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(80), nullable=False, unique=True)
     icon = Column(String(40), nullable=False)
+    created_by_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
     @property
     def serialize(self):
@@ -83,7 +85,8 @@ class Category(Base):
         return {
             'id': self.id,
             'name': self.name,
-            'icon': self.icon
+            'icon': self.icon,
+            'created_by_id': self.created_by_id
             }
 
 
@@ -94,7 +97,9 @@ class SubCategory(Base):
     name = Column(String(80), nullable=False)
     icon = Column(String(40), nullable=False)
     category_id = Column(Integer, ForeignKey('category.id'))
-    category = relationship(Category)
+    category = relationship(Category, cascade="all")
+    created_by_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
     @property
     def serialize(self):
@@ -103,7 +108,8 @@ class SubCategory(Base):
             'id': self.id,
             'name': self.name,
             'icon': self.icon,
-            'category_id': self.category_id
+            'category_id': self.category_id,
+            'created_by_id': self.created_by_id
             }
 
 
@@ -114,7 +120,9 @@ class Item(Base):
     name = Column(String(80), nullable=False)
     description = Column(String(200), nullable=True)
     sub_category_id = Column(Integer, ForeignKey('sub_category.id'))
-    sub_category = relationship(SubCategory)
+    sub_category = relationship(SubCategory, cascade="all")
+    created_by_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
     @property
     def serialize(self):
@@ -123,7 +131,8 @@ class Item(Base):
             'id': self.id,
             'name': self.name,
             'description': self.description,
-            'sub_category_id': self.sub_category_id
+            'sub_category_id': self.sub_category_id,
+            'created_by_id': self.created_by_id
             }
 
 

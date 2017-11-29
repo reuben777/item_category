@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect
 from flask import jsonify, url_for, flash, g
+from functools import wraps
 
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
@@ -18,6 +19,7 @@ import json
 from flask import make_response
 import requests
 from flask_httpauth import HTTPBasicAuth
+from random import randint
 # *IMPORTS*
 
 
@@ -52,6 +54,18 @@ def utilityProcessor():
     return dict(STATE=state, USER=user, ISMASTER=ismaster)
 
 
+def login_verification(f):
+    @wraps(f)
+    def check_authentication(*args, **kwargs):
+        # if a user is not logged in send to login
+        if 'username' in login_session:
+            return f(*args, **kwargs)
+        else:
+            flash("You are not allowed to access there")
+            return redirect(url_for('login'))
+    return check_authentication
+
+
 # Home Url
 @app.route('/')
 def home():
@@ -70,11 +84,8 @@ def home():
 
 # Add an item
 @app.route('/item/add', methods=['GET', 'POST'])
+@login_verification
 def addItem():
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     # if post
     if request.method == 'POST':
         item = session.query(Item).filter_by(
@@ -86,7 +97,8 @@ def addItem():
             new_item = Item(
                 name=request.form['name'],
                 description=request.form['description'],
-                sub_category_id=request.form['sub_category_id'])
+                sub_category_id=request.form['sub_category_id'],
+                created_by_id=login_session['user_id'])
             session.add(new_item)
             flash('New Item "%s" Successfully Created' % new_item.name)
             session.commit()
@@ -106,17 +118,15 @@ def addItem():
 
 # Add a SubCategory
 @app.route('/category/add', methods=['GET', 'POST'])
+@login_verification
 def addCategory():
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     if request.method == 'POST':
         # attempt to create category
         try:
             new_category = Category(
                 name=request.form['name'],
-                icon=request.form['icon'])
+                icon=request.form['icon'],
+                created_by_id=login_session['user_id'])
             session.add(new_category)
             session.commit()
             flash('Category "%s" Successfully Created' % new_category.name)
@@ -135,11 +145,8 @@ def addCategory():
 
 # Add a SubCategory
 @app.route('/subcategory/add', methods=['GET', 'POST'])
+@login_verification
 def addSubCategory():
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     # is post
     if request.method == 'POST':
         sub_category = session.query(SubCategory).filter_by(
@@ -151,7 +158,8 @@ def addSubCategory():
             new_sub_category = SubCategory(
                 name=request.form['name'],
                 icon=request.form['icon'],
-                category_id=request.form['category_id'])
+                category_id=request.form['category_id'],
+                created_by_id=login_session['user_id'])
             session.add(new_sub_category)
             # update flash message
             flsh_msg = 'Sub Category "%s" Successfully Created'
@@ -176,11 +184,8 @@ def addSubCategory():
 @app.route(
     '/item/<int:item_id>/edit/',
     methods=['GET', 'POST'])
+@login_verification
 def editItem(item_id):
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     # get item
     editItem = session.query(Item).filter_by(
         id=item_id).first()
@@ -188,33 +193,41 @@ def editItem(item_id):
     if editItem is None:
         flash("Item does not exist")
         return redirect(url_for('home'))
+
     if request.method == 'POST':
-        # if form
-        if request.form['name']:
-            # update item
-            editItem.name = request.form['name']
-            editItem.description = request.form['description']
-            editItem.sub_category_id = request.form['sub_category_id']
-            flash('Item "%s" Successfully Edited' % editItem.name)
-            return redirect(url_for('home'))
+        if can_crud(editItem) is True:
+            # if form
+            if request.form['name']:
+                # update item
+                editItem.name = request.form['name']
+                editItem.description = request.form['description']
+                editItem.sub_category_id = request.form['sub_category_id']
+                flash('Item "%s" Successfully Edited' % editItem.name)
+        else:
+            flash('You do not have authorization to perform this action')
+        return redirect(url_for('home'))
     else:
         sub_categories = getSubCategory()
-        return render_template(
-            'edit_item.html',
-            item=editItem.serialize,
-            route_name='Edit Item "%s"' % editItem.name,
-            sub_categories=sub_categories)
+        if can_crud(editItem) is True:
+            return render_template(
+                'edit_item.html',
+                item=editItem.serialize,
+                route_name='Edit Item "%s"' % editItem.name,
+                sub_categories=sub_categories)
+        else:
+            return render_template(
+                'view_item.html',
+                item=editItem.serialize,
+                route_name='View Item "%s"' % editItem.name,
+                sub_categories=sub_categories)
 
 
 # Edit a category
 @app.route(
     '/category/<int:category_id>/edit/',
     methods=['GET', 'POST'])
+@login_verification
 def editCategory(category_id):
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     editCategory = session.query(Category).filter_by(
         id=category_id).first()
     # if category does not exists
@@ -222,31 +235,37 @@ def editCategory(category_id):
         flash("Category does not exist")
         return redirect(url_for('home'))
     if request.method == 'POST':
-        # if form
-        if request.form['name']:
-            # update category
-            flsh_ms = 'Category "%s" Successfully Edited'
-            flsh_ms = flsh_ms % editCategory.name
-            editCategory.name = request.form['name']
-            editCategory.icon = request.form['icon']
-            flash(flsh_ms)
-            return redirect(url_for('home'))
+        if can_crud(editCategory) is True:
+            # if form
+            if request.form['name']:
+                # update category
+                flsh_ms = 'Category "%s" Successfully Edited'
+                flsh_ms = flsh_ms % editCategory.name
+                editCategory.name = request.form['name']
+                editCategory.icon = request.form['icon']
+                flash(flsh_ms)
+        else:
+            flash('You do not have authorization to perform this action')
+        return redirect(url_for('home'))
     else:
-        return render_template(
-            'edit_category.html',
-            category=editCategory.serialize,
-            route_name='Edit Category "%s"' % editCategory.name)
+        if can_crud(editCategory) is True:
+            return render_template(
+                'edit_category.html',
+                category=editCategory.serialize,
+                route_name='Edit Category "%s"' % editCategory.name)
+        else:
+            return render_template(
+                'view_category.html',
+                category=editCategory.serialize,
+                route_name='Edit Category "%s"' % editCategory.name)
 
 
 # Edit a sub category
 @app.route(
     '/subcategory/<int:sub_category_id>/edit/',
     methods=['GET', 'POST'])
+@login_verification
 def editSubCategory(sub_category_id):
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     editSubCategory = session.query(SubCategory).filter_by(
         id=sub_category_id).first()
     # if sub category does not exists
@@ -254,40 +273,50 @@ def editSubCategory(sub_category_id):
         flash("Sub category does not exist")
         return redirect(url_for('home'))
     if request.method == 'POST':
-        # if form
-        if request.form['name']:
-            # update sub category
-            flsh_ms = 'Sub Category "%s" Successfully Edited'
-            flsh_ms = flsh_ms % editSubCategory.name
-            editSubCategory.name = request.form['name']
-            editSubCategory.icon = request.form['icon']
-            editSubCategory.category_id = request.form['category_id']
-            flash(flsh_ms)
-            return redirect(url_for('home'))
+        if can_crud(editSubCategory) is True:
+            # if form
+            if request.form['name']:
+                # update sub category
+                flsh_ms = 'Sub Category "%s" Successfully Edited'
+                flsh_ms = flsh_ms % editSubCategory.name
+                editSubCategory.name = request.form['name']
+                editSubCategory.icon = request.form['icon']
+                editSubCategory.category_id = request.form['category_id']
+                flash(flsh_ms)
+        else:
+            flash('You do not have authorization to perform this action')
+        return redirect(url_for('home'))
     else:
         categories = [category.serialize for category in session.query(
             Category).all()]
-        return render_template(
-            'edit_sub_category.html',
-            sub_category=editSubCategory.serialize,
-            route_name='Edit Sub Category "%s"' % editSubCategory.name,
-            categories=categories)
+        if can_crud(editSubCategory) is True:
+            return render_template(
+                'edit_sub_category.html',
+                sub_category=editSubCategory.serialize,
+                route_name='Edit Sub Category "%s"' % editSubCategory.name,
+                categories=categories)
+        else:
+            return render_template(
+                'view_sub_category.html',
+                sub_category=editSubCategory.serialize,
+                route_name='View Sub Category "%s"' % editSubCategory.name,
+                categories=categories)
 
 
 # delete an item
 @app.route(
     '/item/<int:item_id>/delete/',
     methods=['GET', 'POST'])
+@login_verification
 def deleteItem(item_id):
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     itemToDelete = session.query(Item).filter_by(
         id=item_id).first()
     # if item to delete does not exists
     if itemToDelete is None:
         flash("Item does not exist")
+        return redirect(url_for('home'))
+    if can_crud(itemToDelete) is False:
+        flash('You do not have authorization to perform this action')
         return redirect(url_for('home'))
     if request.method == 'POST':
         # delete item
@@ -306,16 +335,16 @@ def deleteItem(item_id):
 @app.route(
     '/category/<int:category_id>/delete/',
     methods=['GET', 'POST'])
+@login_verification
 def deleteCategory(category_id):
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     categoryToDelete = session.query(Category).filter_by(
         id=category_id).first()
     # if category to delete does not exists
     if categoryToDelete is None:
         flash("Category does not exist")
+        return redirect(url_for('home'))
+    if can_crud(categoryToDelete) is False:
+        flash('You do not have authorization to perform this action')
         return redirect(url_for('home'))
     if request.method == 'POST':
         # delete category
@@ -334,16 +363,16 @@ def deleteCategory(category_id):
 @app.route(
     '/subcategory/<int:sub_category_id>/delete/',
     methods=['GET', 'POST'])
+@login_verification
 def deleteSubCategory(sub_category_id):
-    # if a user is not logged in send to login
-    if login_session.get('username') is None:
-        flash('login required')
-        return redirect(url_for('login'))
     subCategoryToDelete = session.query(SubCategory).filter_by(
         id=sub_category_id).first()
     # if sub category to delete does not exists
     if subCategoryToDelete is None:
         flash("Sub category does not exist")
+        return redirect(url_for('home'))
+    if can_crud(subCategoryToDelete) is False:
+        flash('You do not have authorization to perform this action')
         return redirect(url_for('home'))
     if request.method == 'POST':
         # delete sub category
@@ -463,6 +492,7 @@ def login():
                 login_session['username'] = user.username
                 login_session['email'] = user.email
                 login_session['picture'] = user.picture
+                login_session['user_id'] = user.id
                 flsh_msg = 'Welcome, %s' % user.username
                 redirect_url = redirect(url_for('home'))
             else:
@@ -571,7 +601,6 @@ def gconntect():
 @app.route('/disconnect')
 def disconnect():
     access_token = login_session.get('access_token')
-    print "access_token %s" % access_token
     # if access token present
     if access_token is not None:
         url = 'https://accounts.google.com/o/oauth2/revoke?token={}'
@@ -581,26 +610,18 @@ def disconnect():
         result = h.request(url, 'GET')[0]
         # successful result
         if result['status'] == '200':
-            del login_session['access_token']
-            del login_session['gplus_id']
-            del login_session['username']
-            del login_session['email']
-            del login_session['picture']
+            clearLoginSession()
             flash('Logged Out')
         else:
-            # an error occured with http request
-            flash('Could not log out')
-        return redirect(url_for('home'))
-    # if no access token but there is a login session
-    if login_session.get('username') is not None:
-        # clear login session
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
-        flash('Logged Out')
+            flash('Could not log you out.')
     else:
-        # no one was logged in
-        flash('Not Logged In')
+        # if no access token but there is a login session
+        if login_session.get('username') is not None:
+            # clear login session
+            clearLoginSession()
+            flash('Logged Out')
+        else:
+            flash('Not Logged in')
     return redirect(url_for('home'))
 
 
@@ -655,18 +676,37 @@ def getAllCategories(with_items=True):
     return categories
 
 
+def clearLoginSession():
+    if login_session.get('username') is not None:
+        del login_session['username']
+    if login_session.get('user_id') is not None:
+        del login_session['user_id']
+    if login_session.get('email') is not None:
+        del login_session['email']
+    if login_session.get('picture') is not None:
+        del login_session['picture']
+    if login_session.get('access_token') is not None:
+        del login_session['access_token']
+    if login_session.get('gplus_id') is not None:
+        del login_session['gplus_id']
+
+
 def createUser(login_session):
     # create user from login session
-    newUser = User(
-        name=login_session['username'],
-        email=login_session['email'],
-        picture=login_session['picture'],
-        username="",
-        passwd="")
-    session.add(newUser)
-    session.commit()
-    user = session.query(User).filter_by(email=login_session['email']).one()
-    return user.id
+    try:
+        newUser = User(
+            name=login_session['username'],
+            email=login_session['email'],
+            picture=login_session['picture'],
+            username="GOOGLE-" + login_session['email'],
+            passwd="")
+        session.add(newUser)
+        session.commit()
+        user = session.query(User).filter_by(
+            email=login_session['email']).first()
+        return user.id
+    except:
+        return None
 
 
 def getUserInfo(user_id):
@@ -697,6 +737,29 @@ def getSubCategory(with_category=True):
     return sub_categories
 
 
+def getRandomCategory():
+    categories = [category.serialize for category in session.query(
+        Category).all()]
+    randomCategory = categories[randint(0, len(categories) - 1)]
+    sub_categories = [group.serialize for group in session.query(
+        SubCategory).filter_by(category_id=randomCategory['id'])]
+    sub_category_arr = []
+    # get sub categories
+    for sub_cat in sub_categories:
+        # sub category with item information
+        sub_cat['items'] = [
+            item.serialize for item in session.query(
+                Item).filter_by(
+                    sub_category_id=sub_cat['id']).all()]
+        # if there is items for this sub category
+        if sub_cat['items'] is not 0:
+            sub_category_arr.append(sub_cat)
+    # if category has sub categories
+    if sub_category_arr is not None:
+        randomCategory['sub_categories'] = sub_category_arr
+    return dict(Category=randomCategory)
+
+
 # check if the currently logged in user is the master user
 def isMasterUser():
     if login_session.get('email') is not None:
@@ -704,6 +767,13 @@ def isMasterUser():
             email=login_session['email']).first()
         if user is not None:
             return user.id == 1
+    return False
+
+
+# verify if item/category/sub category can be CRUD
+def can_crud(item):
+    if item is not None and item.created_by_id is not None:
+        return item.created_by_id == login_session.get('user_id')
     return False
 
 
@@ -738,7 +808,7 @@ def get_auth_token():
 @app.route('/catalog.json', methods=['GET', 'POST'])
 @auth.login_required
 def catalogJSON():
-    catalog = getAllCategories()
+    catalog = getRandomCategory()
     return jsonify(catalog), 201
 
 

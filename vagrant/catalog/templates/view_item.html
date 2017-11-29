@@ -1,0 +1,23 @@
+{% extends "main.html" %}
+{% block content %}
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label><b>Item Name:</b></label>
+      <p>
+        {{item.name}}
+      </p>
+    </div>
+    <div class="col-md-6 mb-3">
+      <label><b>Category:</b></label>
+      {% for sub_category in sub_categories %}
+        {% if sub_category.id == item.sub_category_id %}
+          <p value="{{sub_category.id}}">{{sub_category.name}} - {{sub_category.category.name}}</p>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="col-md-12 mb-3">
+      <label><b>Description</b></label>
+      <p>{{item.description}}</>
+    </div>
+  </div>
+{% endblock %}
