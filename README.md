@@ -80,6 +80,8 @@ cd /vagrant/catalog
 python application.py
 ```
 
+Application will be live at [localhost:8000](http://localhost:8000)
+
 ## Built With
 
 * [Flask](http://flask.pocoo.org/docs/0.12/) - The web framework used

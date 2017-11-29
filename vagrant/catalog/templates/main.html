@@ -48,6 +48,7 @@
 		      console.log('authResult', authResult['code'])
 		      // Send the one time use code to the server. if the server responses, write a login successful message and redirect
 					$('.modal-body').html('<div class="text-center">Logging In...</div>');
+					$('#login_form_container').html('<div class="col-md-12 text-center">Logging In...</div>');
 		      $.ajax({
 		        type: 'POST',
 		        url: '/gconnect?state={{STATE}}',
@@ -56,7 +57,8 @@
 		        data: authResult['code'],
 		        success: function(result) {
 		          if (result) {
-		            $('.modal-body').html('<div class="text-center">Login Successful!</br>' + result + '</br>Redirecting...</div>')
+		            $('.modal-body').html('<div class="col-md-12 text-center">Login Successful!</br>' + result + '</br>Redirecting...</div>')
+								$('#login_form_container').html('<div class="col-md-12 text-center">Login Successful!</br>' + result + '</br>Redirecting...</div>')
 		            setTimeout(function() {
 									$('#login_modal').modal('hide')
 		              window.location.reload();
@@ -67,12 +69,14 @@
 		        },
 		        error:function (xhr, ajaxOptions, thrownError){
 		          if(xhr.status==404) {
-		            $('.modal-body').html("Failed to make a server-side call.</br>Check your configuration and console.")
+		            $('.modal-body').html("Failed to make a server-side call.</br>Check your configuration and console.");
+								$('#login_form_container').html("Failed to make a server-side call.</br>Check your configuration and console.");
 		          }
 		        }
 		      })
 		    } else {
-		      $('.modal-body').html("Failed to make a server-side call.</br>Check your configuration and console.")
+		      $('.modal-body').html("Failed to make a server-side call.</br>Check your configuration and console.");
+					$('#login_form_container').html("Failed to make a server-side call.</br>Check your configuration and console.");
 		    }
 		  }
 		</script>

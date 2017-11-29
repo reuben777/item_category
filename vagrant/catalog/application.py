@@ -118,11 +118,12 @@ def addCategory():
                 name=request.form['name'],
                 icon=request.form['icon'])
             session.add(new_category)
-            flash('Category "%s" Successfully Created' % new_category.name)
             session.commit()
+            flash('Category "%s" Successfully Created' % new_category.name)
             return redirect(url_for('home'))
         except:
             # if category exists flash error
+            session.rollback()
             flash('Category "%s" Already Exists' % request.form['name'])
             return redirect(url_for('addCategory'))
     else:
@@ -589,6 +590,7 @@ def disconnect():
         else:
             # an error occured with http request
             flash('Could not log out')
+        return redirect(url_for('home'))
     # if no access token but there is a login session
     if login_session.get('username') is not None:
         # clear login session
@@ -655,8 +657,12 @@ def getAllCategories(with_items=True):
 
 def createUser(login_session):
     # create user from login session
-    newUser = User(name=login_session['username'], email=login_session[
-                   'email'], picture=login_session['picture'])
+    newUser = User(
+        name=login_session['username'],
+        email=login_session['email'],
+        picture=login_session['picture'],
+        username="",
+        passwd="")
     session.add(newUser)
     session.commit()
     user = session.query(User).filter_by(email=login_session['email']).one()
