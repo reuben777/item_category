@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect
-from flask import jsonify, url_for, flash
+from flask import jsonify, url_for, flash, g
 
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
@@ -18,25 +18,28 @@ import json
 from flask import make_response
 import requests
 from flask_httpauth import HTTPBasicAuth
+# *IMPORTS*
+
 
 auth = HTTPBasicAuth()
-
 # setup flask app
 app = Flask(__name__)
-
 # Connect to Database and create database session
 Base.metadata.bind = engine
-
+# Create Session
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
-
+# Set Google Client ID
 CLIENT_ID = json.loads(
     open('client_secrets.json', 'r').read()
 )['web']['client_id']
 
 
+# context processor to pass through
+# variables for all url's
 @app.context_processor
 def utilityProcessor():
+    # random string of characters for state
     state = ''.join(random.choice(
         string.ascii_uppercase + string.digits
         ) for x in range(32))
@@ -49,9 +52,11 @@ def utilityProcessor():
     return dict(STATE=state, USER=user, ISMASTER=ismaster)
 
 
+# Home Url
 @app.route('/')
 def home():
     categories = getAllCategories()
+    # swtich between logged in and public templates
     if login_session.get('username') is None:
         return render_template(
             'public_home.html',
@@ -66,46 +71,62 @@ def home():
 # Add an item
 @app.route('/item/add', methods=['GET', 'POST'])
 def addItem():
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
-    if request.method == 'GET':
+    # if post
+    if request.method == 'POST':
+        item = session.query(Item).filter_by(
+                name=request.form['name'],
+                sub_category_id=request.form['sub_category_id']).first()
+        # item doesn't exist
+        if item is None:
+            # create new item
+            new_item = Item(
+                name=request.form['name'],
+                description=request.form['description'],
+                sub_category_id=request.form['sub_category_id'])
+            session.add(new_item)
+            flash('New Item "%s" Successfully Created' % new_item.name)
+            session.commit()
+            return redirect(url_for('home'))
+        else:
+            # if item exists flash error
+            flash('Item Already Exists')
+            return redirect(url_for('addItem'))
+    else:
+        # not post render template
         sub_categories = getSubCategory()
         return render_template(
             'item_form.html',
             route_name='Add Item',
             sub_categories=sub_categories)
-    if request.method == 'POST':
-        new_item = Item(
-            name=request.form['name'],
-            description=request.form['description'],
-            sub_category_id=request.form['sub_category_id'])
-        session.add(new_item)
-        flash('New Item "%s" Successfully Created' % new_item.name)
-        session.commit()
-        return redirect(url_for('home'))
 
 
 # Add a SubCategory
 @app.route('/category/add', methods=['GET', 'POST'])
 def addCategory():
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
     if request.method == 'POST':
-        category = session.query(Category).filter_by(
-                name=request.form['name']).first()
-        if category is None:
+        # attempt to create category
+        try:
             new_category = Category(
                 name=request.form['name'],
                 icon=request.form['icon'])
             session.add(new_category)
             flash('Category "%s" Successfully Created' % new_category.name)
             session.commit()
-        else:
+            return redirect(url_for('home'))
+        except:
+            # if category exists flash error
             flash('Category "%s" Already Exists' % request.form['name'])
-        return redirect(url_for('home'))
+            return redirect(url_for('addCategory'))
     else:
+        # render template
         return render_template(
             'category_form.html',
             route_name='Add Category')
@@ -114,27 +135,34 @@ def addCategory():
 # Add a SubCategory
 @app.route('/subcategory/add', methods=['GET', 'POST'])
 def addSubCategory():
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
+    # is post
     if request.method == 'POST':
         sub_category = session.query(SubCategory).filter_by(
                 name=request.form['name'],
                 category_id=request.form['category_id']).first()
+        # sub category doesn't exist
         if sub_category is None:
+            # create sub category
             new_sub_category = SubCategory(
                 name=request.form['name'],
                 icon=request.form['icon'],
                 category_id=request.form['category_id'])
             session.add(new_sub_category)
+            # update flash message
             flsh_msg = 'Sub Category "%s" Successfully Created'
             flsh_msg = flsh_msg % new_sub_category.name
             flash(flsh_msg)
             session.commit()
+            return redirect(url_for('home'))
         else:
             flash('Sub Category "%s" Already Exists' % request.form['name'])
-        return redirect(url_for('home'))
+            return redirect(url_for('addSubCategory'))
     else:
+        # render template
         categories = [category.serialize for category in session.query(
             Category).all()]
         return render_template(
@@ -148,13 +176,21 @@ def addSubCategory():
     '/item/<int:item_id>/edit/',
     methods=['GET', 'POST'])
 def editItem(item_id):
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
+    # get item
     editItem = session.query(Item).filter_by(
         id=item_id).first()
+    # if item does not exists
+    if editItem is None:
+        flash("Item does not exist")
+        return redirect(url_for('home'))
     if request.method == 'POST':
+        # if form
         if request.form['name']:
+            # update item
             editItem.name = request.form['name']
             editItem.description = request.form['description']
             editItem.sub_category_id = request.form['sub_category_id']
@@ -174,13 +210,20 @@ def editItem(item_id):
     '/category/<int:category_id>/edit/',
     methods=['GET', 'POST'])
 def editCategory(category_id):
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
     editCategory = session.query(Category).filter_by(
         id=category_id).first()
+    # if category does not exists
+    if editCategory is None:
+        flash("Category does not exist")
+        return redirect(url_for('home'))
     if request.method == 'POST':
+        # if form
         if request.form['name']:
+            # update category
             flsh_ms = 'Category "%s" Successfully Edited'
             flsh_ms = flsh_ms % editCategory.name
             editCategory.name = request.form['name']
@@ -199,13 +242,20 @@ def editCategory(category_id):
     '/subcategory/<int:sub_category_id>/edit/',
     methods=['GET', 'POST'])
 def editSubCategory(sub_category_id):
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
     editSubCategory = session.query(SubCategory).filter_by(
         id=sub_category_id).first()
+    # if sub category does not exists
+    if editSubCategory is None:
+        flash("Sub category does not exist")
+        return redirect(url_for('home'))
     if request.method == 'POST':
+        # if form
         if request.form['name']:
+            # update sub category
             flsh_ms = 'Sub Category "%s" Successfully Edited'
             flsh_ms = flsh_ms % editSubCategory.name
             editSubCategory.name = request.form['name']
@@ -228,12 +278,18 @@ def editSubCategory(sub_category_id):
     '/item/<int:item_id>/delete/',
     methods=['GET', 'POST'])
 def deleteItem(item_id):
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
     itemToDelete = session.query(Item).filter_by(
         id=item_id).first()
+    # if item to delete does not exists
+    if itemToDelete is None:
+        flash("Item does not exist")
+        return redirect(url_for('home'))
     if request.method == 'POST':
+        # delete item
         session.delete(itemToDelete)
         flash('Item "%s" Successfully Deleted' % itemToDelete.name)
         session.commit()
@@ -250,12 +306,18 @@ def deleteItem(item_id):
     '/category/<int:category_id>/delete/',
     methods=['GET', 'POST'])
 def deleteCategory(category_id):
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
     categoryToDelete = session.query(Category).filter_by(
         id=category_id).first()
+    # if category to delete does not exists
+    if categoryToDelete is None:
+        flash("Category does not exist")
+        return redirect(url_for('home'))
     if request.method == 'POST':
+        # delete category
         session.delete(categoryToDelete)
         flash('Category "%s" Successfully Deleted' % categoryToDelete.name)
         session.commit()
@@ -272,12 +334,18 @@ def deleteCategory(category_id):
     '/subcategory/<int:sub_category_id>/delete/',
     methods=['GET', 'POST'])
 def deleteSubCategory(sub_category_id):
+    # if a user is not logged in send to login
     if login_session.get('username') is None:
         flash('login required')
         return redirect(url_for('login'))
     subCategoryToDelete = session.query(SubCategory).filter_by(
         id=sub_category_id).first()
+    # if sub category to delete does not exists
+    if subCategoryToDelete is None:
+        flash("Sub category does not exist")
+        return redirect(url_for('home'))
     if request.method == 'POST':
+        # delete sub category
         session.delete(subCategoryToDelete)
         fls_msg = 'Sub Category "%s" Successfully Deleted'
         fls_msg = fls_msg % subCategoryToDelete.name
@@ -291,43 +359,51 @@ def deleteSubCategory(sub_category_id):
             type='sub category')
 
 
-@app.route('/users/manage', methods=['GET', 'POST'])
+@app.route('/users/manage', methods=['GET'])
 def manageUsers():
+    # if a user is not master user
     if isMasterUser() is False:
+        # if a user is not logged in let know they are restricted
         if login_session.get('username') is not None:
             flash('Access Restricted')
             return redirect(url_for('home'))
+        # if not logged in and not master send to login
         flash('Please Login as Master')
         return redirect(url_for('login'))
-    if request.method == 'POST':
-        return redirect(url_for('home'))
-    else:
-        users = session.query(User).all()
-        return render_template(
-            'manage_users.html',
-            users=users,
-            route_name='Manage Users')
+    users = session.query(User).all()
+    return render_template(
+        'manage_users.html',
+        users=users,
+        route_name='Manage Users')
 
 
 @app.route('/users/edit/<int:user_id>/', methods=['GET', 'POST'])
 def editUser(user_id):
+    # if a user is not master user
     if isMasterUser() is False:
+        # if a user is not logged in let know they are restricted
         if login_session.get('username') is not None:
             flash('Access Restricted')
             return redirect(url_for('home'))
+        # if not logged in and not master send to login
         flash('Please Login as Master')
         return redirect(url_for('login'))
+    # get user to edit
     user = session.query(User).filter_by(id=user_id).first()
+    # if post then update user
     if request.method == 'POST':
         flsh_msg = 'User "%s" Successfully Edited'
         flsh_msg = flsh_msg % user.name
+        # if form
         if request.form['name']:
+            # update user info
             user.name = request.form['name']
             user.email = request.form['email']
             user.username = request.form['username']
             user.picture = request.form['picture']
             flash(flsh_msg)
         return redirect(url_for('manageUsers'))
+    # otherwise just show template
     else:
         return render_template(
             'edit_user.html',
@@ -336,36 +412,38 @@ def editUser(user_id):
 
 @app.route('/users/register', methods=['GET', 'POST'])
 def signup():
+    # if post attempt to create user
     if request.method == 'POST':
+        # set default for redirect_url and flsh_msg
         redirect_url = url_for('signup')
         flsh_msg = "An Error Occured"
-        user = session.query(User).filter_by(
-            email=request.form['email']).first()
-        if user is None:
-            # make user
-            user = session.query(User).filter_by(
-                username=request.form['username']).first()
-            if user is None:
-                newUser = User(
-                    name=request.form['name'],
-                    email=request.form['email'],
-                    username=request.form['username'],
-                    picture=request.form['picture'],
-                    passwd=request.form['passwd'])
-                session.add(newUser)
-                session.commit()
-                login_session['username'] = newUser.username
-                login_session['email'] = newUser.email
-                login_session['picture'] = newUser.picture
-                flsh_msg = "Welcome, %s" % newUser.username
-                redirect_url = url_for('home')
-            else:
-                flsh_msg = "Username '%s' already in use." % request.form['username']
-        else:
-            flsh_msg = "Email '%s' already in use." % request.form['email']
+        # see if user already exists
+        try:
+            # create new user
+            newUser = User(
+                name=request.form['name'],
+                email=request.form['email'],
+                username=request.form['username'],
+                picture=request.form['picture'],
+                passwd=request.form['passwd'])
+            # add and commit
+            session.add(newUser)
+            session.commit()
+            # set login session with new user
+            login_session['username'] = newUser.username
+            login_session['email'] = newUser.email
+            login_session['picture'] = newUser.picture
+            # update flash message
+            flsh_msg = "Welcome, %s" % newUser.username
+            redirect_url = url_for('home')
+        except:
+            # user exists
+            # update flash message
+            flsh_msg = "User already exists."
         flash(flsh_msg)
         return redirect(redirect_url)
     else:
+        # if not post then render template
         return render_template(
             'register_form.html',
             route_name='Register')
@@ -373,9 +451,12 @@ def signup():
 
 @app.route('/users/login', methods=['GET', 'POST'])
 def login():
+    # if post
     if request.method == 'POST':
+        # attempt to get user
         user = session.query(User).filter_by(
             email=request.form['email']).first()
+        # if user exists
         if user is not None:
             if user.verify_password(request.form['passwd']):
                 login_session['username'] = user.username
@@ -384,11 +465,14 @@ def login():
                 flsh_msg = 'Welcome, %s' % user.username
                 redirect_url = redirect(url_for('home'))
             else:
+                # user doesn't exists
+                # update flash message and redirect url
                 flsh_msg = 'Incorrect Login Details'
                 redirect_url = redirect(url_for('login'))
         flash(flsh_msg)
         return redirect_url
     else:
+        # if not post then render template
         return render_template(
             'login_page.html', route_name='Login')
 
@@ -487,14 +571,14 @@ def gconntect():
 def disconnect():
     access_token = login_session.get('access_token')
     print "access_token %s" % access_token
+    # if access token present
     if access_token is not None:
         url = 'https://accounts.google.com/o/oauth2/revoke?token={}'
         url = url.format(login_session['access_token'])
         h = httplib2.Http()
+        # make http request to google to revoke token
         result = h.request(url, 'GET')[0]
-        print "result %s" % result
-        # result = result.decode('utf-8')
-
+        # successful result
         if result['status'] == '200':
             del login_session['access_token']
             del login_session['gplus_id']
@@ -503,13 +587,17 @@ def disconnect():
             del login_session['picture']
             flash('Logged Out')
         else:
+            # an error occured with http request
             flash('Could not log out')
+    # if no access token but there is a login session
     if login_session.get('username') is not None:
+        # clear login session
         del login_session['username']
         del login_session['email']
         del login_session['picture']
         flash('Logged Out')
     else:
+        # no one was logged in
         flash('Not Logged In')
     return redirect(url_for('home'))
 
@@ -533,7 +621,8 @@ def debug():
 
 
 # Helper Functions
-
+# put all the various bits of info together
+# to have the category info along with corrolating info
 def getAllCategories(with_items=True):
     sub_categories = [group.serialize for group in session.query(
         SubCategory).all()]
@@ -541,18 +630,22 @@ def getAllCategories(with_items=True):
     for category_raw in session.query(Category).all():
         category_info = category_raw.serialize
         sub_category_arr = []
+        # get sub categories
         for sub_cat in sub_categories:
             if sub_cat['category_id'] == category_info['id']:
+                # determins if lower depth info should be obtained
                 if with_items:
+                    # sub category with item information
                     sub_cat['item_info'] = [
                         item.serialize for item in session.query(
                             Item).filter_by(
                                 sub_category_id=sub_cat['id']).all()]
+                    # if there is items for this category
                     if sub_cat['item_info'] is not 0:
                         sub_category_arr.append(sub_cat)
                 else:
                     sub_category_arr.append(sub_cat)
-
+        # if category has sub categories
         if sub_category_arr is not None:
             category_info['sub_categories'] = sub_category_arr
             categories.append(category_info)
@@ -561,6 +654,7 @@ def getAllCategories(with_items=True):
 
 
 def createUser(login_session):
+    # create user from login session
     newUser = User(name=login_session['username'], email=login_session[
                    'email'], picture=login_session['picture'])
     session.add(newUser)
@@ -585,7 +679,9 @@ def getUserID(email):
 def getSubCategory(with_category=True):
     sub_categories = [category.serialize for category in session.query(
         SubCategory).all()]
+    # determins if lower depth info should be obtained
     if with_category:
+        # sub category with it's corrolating category info
         categories = [category.serialize for category in session.query(
             Category).all()]
         for sub_cat in sub_categories:
@@ -595,6 +691,7 @@ def getSubCategory(with_category=True):
     return sub_categories
 
 
+# check if the currently logged in user is the master user
 def isMasterUser():
     if login_session.get('email') is not None:
         user = session.query(User).filter_by(
@@ -604,6 +701,7 @@ def isMasterUser():
     return False
 
 
+# token/login verification for api calls
 @auth.verify_password
 def verify_password(username_or_token, password):
     # check for logged in user
@@ -622,6 +720,7 @@ def verify_password(username_or_token, password):
     return True
 
 
+# get token from login credentials for easier api calls
 @app.route('/token')
 @auth.login_required
 def get_auth_token():
@@ -629,6 +728,7 @@ def get_auth_token():
     return jsonify({'token': token.decode('ascii')})
 
 
+# Catalog information api call in JSON format
 @app.route('/catalog.json', methods=['GET', 'POST'])
 @auth.login_required
 def catalogJSON():
@@ -636,7 +736,8 @@ def catalogJSON():
     return jsonify(catalog), 201
 
 
+# start application server
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8000)

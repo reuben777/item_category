@@ -47,10 +47,14 @@ items = [
     {'name': 'Hotel 2', 'description': 'description', 'sub_category_id': 4},
     {'name': 'Museum 1', 'description': 'description', 'sub_category_id': 5},
     {'name': 'Museum 2', 'description': 'description', 'sub_category_id': 5},
-    {'name': 'Restuarant 1', 'description': 'description', 'sub_category_id': 6},
-    {'name': 'Restuarant 2', 'description': 'description', 'sub_category_id': 6},
-    {'name': 'Park 1', 'description': 'description', 'sub_category_id': 7},
-    {'name': 'Recreation Center 1', 'description': 'description', 'sub_category_id': 8},
+    {'name': 'Restuarant 1',
+        'description': 'description', 'sub_category_id': 6},
+    {'name': 'Restuarant 2',
+        'description': 'description', 'sub_category_id': 6},
+    {'name': 'Park 1',
+        'description': 'description', 'sub_category_id': 7},
+    {'name': 'Recreation Center 1',
+        'description': 'description', 'sub_category_id': 8},
 ]
 
 
