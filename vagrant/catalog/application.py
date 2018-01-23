@@ -20,6 +20,7 @@ from flask import make_response
 import requests
 from flask_httpauth import HTTPBasicAuth
 from random import randint
+import os
 # *IMPORTS*
 
 
@@ -31,9 +32,10 @@ Base.metadata.bind = engine
 # Create Session
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+path = os.path.dirname(__file__)
 # Set Google Client ID
 CLIENT_ID = json.loads(
-    open('client_secrets.json', 'r').read()
+    open(path+'/client_secrets.json', 'r').read()
 )['web']['client_id']
 
 
@@ -816,4 +818,4 @@ def catalogJSON():
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='localhost', port=5000)

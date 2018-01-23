@@ -20,10 +20,10 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(80), nullable=False)
-    email = Column(String(100))
+    email = Column(String(150))
     username = Column(String(100), unique=True)
-    picture = Column(String(100))
-    password_hash = Column(String(100))
+    picture = Column(String(200))
+    password_hash = Column(String(500))
 
     def __init__(
         self, name, email, username,
